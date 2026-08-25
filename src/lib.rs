@@ -154,7 +154,10 @@ unsafe fn cstr_to_string(ptr: *const libc::c_char) -> Result<Option<String>, Err
     let string = if ptr.is_null() {
         None
     } else {
-        Some(CStr::from_ptr(ptr as _).to_str()?.to_owned())
+        // Lossy conversion: on non-English Windows, libpcap/Npcap error strings are
+        // localized in a legacy codepage (e.g. CP1250) and are NOT valid UTF-8.
+        // Strict to_str() masks the real error behind MalformedError.
+        Some(CStr::from_ptr(ptr as _).to_string_lossy().into_owned())
     };
     Ok(string)
 }
